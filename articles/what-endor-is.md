@@ -6,6 +6,12 @@
 **Scope:** inventory of one machine as observed that day  
 **Not:** a generic homelab flex, and not a complete parts list
 
+<p align="center">
+  <img src="images/endor-rack.jpg" alt="ENDOR rack with the glass door open: Ryzen host and Tesla P100 on top, UniFi Dream Machine Pro and 16-port PoE switch in the middle, spare disks on the shelf below" width="720">
+</p>
+
+<p align="center"><em>Floor rack, door parked to the side. The blower Tesla at the top right is the P100 — no display cable because the card has no display ports.</em></p>
+
 Other notes in this repo assume a box named ENDOR. This is that box: what I will stand behind, what I will not invent, and what was actually running when I looked.
 
 ## Why this note exists
@@ -20,7 +26,7 @@ What I do have:
 - A runtime policy with one loud exception
 - A `podman ps` from 2026-09-07
 
-Current rack PSU label is unread. A power-pull test is still unpublished.
+The photo is the case: a 12U glass-door floor rack, board on an open tray at the top. Current rack PSU label is unread. A power-pull test is still unpublished.
 
 ## The claim
 
@@ -36,7 +42,7 @@ Current rack PSU label is unread. A power-pull test is still unpublished.
 | CPU | Ryzen 7 5800XT, 8c/16t | Enough host CPU that Wolf encode is a choice |
 | RAM | 30 GiB visible, 0 swap | Swap is disabled so Ubuntu does not wear the NVMe |
 | GPU | Tesla P100 16 GB, nvidia0 / renderD128, module 580.173.02 | Printed shroud + Wathai 9733, PWM from p100-fan-control.service |
-| Case | 12U glass-door rack; board on an open tray at the top | Photos under articles/images/ |
+| Case | 12U glass-door rack; board on an open tray at the top | Photo above; same file at [images/endor-rack.jpg](images/endor-rack.jpg) |
 | GPU consumers | Wolf (rootful), Immich server + ML via CDI, Ollama | Two NVIDIA integration stories |
 | OS / runtime | Ubuntu 26.04.1 LTS, kernel 7.0.0-31-generic, Podman 5.7.0 | Immich ML healthcheck quoting broke on this pairing |
 | Storage | Btrfs on bcache writethrough; NVMe root; separate media + Time Machine disks | Not ZFS. Not one big pool |
