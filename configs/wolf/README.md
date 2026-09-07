@@ -24,3 +24,28 @@ Device nodes (`renderD128`, `nvidia0`) stay. They are the architecture.
 - `ExecStartPre` removes leftover `WolfPulseAudio` / `Wolf-UI_*` containers
 
 Do not treat this as upstream. Read [Wolf's current Podman section](https://games-on-whales.github.io/wolf/stable/user/quickstart.html) first.
+
+## After an NVIDIA driver update
+
+The Wolf guide's driver-volume steps are a first-install recipe. They do not stay valid when the host driver changes. `nvidia-driver-vol` still holds the old userspace until you rebuild it against `/sys/module/nvidia/version`.
+
+Do this only after the host NVIDIA driver has been updated and the module is the version you intend to run.
+
+```bash
+# CDI spec used by other GPU containers on this host (Immich, etc.)
+sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+
+# Rebuild the Games-on-Whales driver image against the running module
+sudo curl https://raw.githubusercontent.com/games-on-whales/gow/master/images/nvidia-driver/Dockerfile \
+  | sudo podman build -t gow/nvidia-driver:latest -f - \
+      --build-arg NV_VERSION="$(cat /sys/module/nvidia/version)" .
+
+# Pour the new files into the existing named volume
+sudo podman create --name nvidia_temp --rm \
+  --mount type=volume,source=nvidia-driver-vol,destination=/usr/nvidia \
+  gow/nvidia-driver:latest sh
+
+sudo podman start nvidia_temp
+```
+
+Then restart Wolf (`sudo systemctl restart wolf`) and confirm the module version and the volume contents still match. I have not automated this. A missed rebuild after `apt` is how the "shadowing" failure comes back.
