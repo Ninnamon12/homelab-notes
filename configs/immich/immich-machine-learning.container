@@ -1,0 +1,28 @@
+[Unit]
+Description=Immich Machine Learning
+Requires=immich-redis.service immich-database.service
+After=immich-redis.service immich-database.service
+
+[Container]
+ContainerName=immich_machine_learning
+Image=ghcr.io/immich-app/immich-machine-learning:release-cuda
+Pod=immich.pod
+AutoUpdate=registry
+Exec=/bin/sh -c "python -m immich_ml --disable-cuda-graph"
+Environment=TZ=America/Chicago
+Environment=DB_HOSTNAME=database
+Environment=DB_USERNAME=postgres
+Environment=DB_PASSWORD=changeme
+Environment=DB_DATABASE_NAME=immich
+Environment=REDIS_HOSTNAME=immich_redis
+Volume=/srv/immich/model-cache:/cache
+AddDevice=nvidia.com/gpu=0
+HealthCmd=["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3003/ping', timeout=10)"]
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=60s
+
+[Service]
+Restart=unless-stopped
+TimeoutStartSec=180
