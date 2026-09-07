@@ -1,0 +1,17 @@
+[Unit]
+Description=Immich Pod
+Requires=immich.network
+After=immich.network
+
+[Pod]
+PodName=immich
+Network=immich.network
+PublishPort=127.0.0.1:2283:2283
+PublishPort=192.0.2.10:2283:2283
+PublishPort=192.0.2.10:3003:3003
+
+[Service]
+Restart=unless-stopped
+
+[Install]
+WantedBy=default.target

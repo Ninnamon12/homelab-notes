@@ -1,0 +1,15 @@
+[Unit]
+Description=Immich Redis
+
+[Container]
+ContainerName=immich_redis
+Image=docker.io/redis:6.2-alpine
+Pod=immich.pod
+AutoUpdate=registry
+Environment=TZ=America/Chicago
+HealthCmd=redis-cli ping || exit 1
+HealthInterval=30s
+Memory=1G
+
+[Service]
+Restart=unless-stopped
