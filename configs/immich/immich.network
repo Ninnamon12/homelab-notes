@@ -1,0 +1,4 @@
+[Network]
+NetworkName=immich
+Driver=bridge
+Label=app=immich
