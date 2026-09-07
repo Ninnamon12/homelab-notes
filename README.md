@@ -9,7 +9,7 @@ These are not generic tutorials. They are what I actually ran, what broke, and w
 | Date | Title | Status |
 | --- | --- | --- |
 | 2026-09-07 | [What ENDOR is (snapshot, not a shopping list)](articles/what-endor-is.md) | draft |
-| 2026-09-07 | [Why I bought a sub-$100 Tesla P100](articles/why-i-bought-a-tesla-p100.md) | draft |
+| 2026-09-07 | [Why I bought a sub-$100 Tesla P100](articles/why-i-bought-a-tesla-p100.md) | published |
 | 2026-09-07 | [Why I run Wolf on Podman instead of Docker (even though the permissions are worse)](articles/why-i-run-wolf-on-podman.md) | published |
 
 ## Layout
