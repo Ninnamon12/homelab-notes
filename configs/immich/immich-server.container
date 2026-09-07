@@ -1,0 +1,29 @@
+[Unit]
+Description=Immich Server
+Requires=immich-redis.service immich-database.service immich-machine-learning.service
+After=immich-redis.service immich-database.service immich-machine-learning.service
+
+[Container]
+ContainerName=immich_server
+Image=ghcr.io/immich-app/immich-server:release
+Pod=immich.pod
+AutoUpdate=registry
+Environment=TZ=America/Chicago
+Environment=IMMICH_HOST=0.0.0.0
+Environment=DB_HOSTNAME=database
+Environment=DB_USERNAME=postgres
+Environment=DB_DATABASE_NAME=immich
+Environment=DB_PASSWORD=changeme
+Environment=REDIS_HOSTNAME=immich_redis
+Environment=MACHINE_LEARNING_URL=http://immich_machine_learning:3003
+Volume=/srv/immich/library:/usr/src/app/upload
+Volume=/etc/localtime:/etc/localtime:ro
+Volume=/srv/photos:/Photos
+HealthCmd=curl -f http://localhost:2283/api/server/ping || exit 1
+HealthInterval=30s
+Environment=NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
+AddDevice=nvidia.com/gpu=0
+
+[Service]
+Restart=always
+TimeoutStartSec=180

@@ -1,0 +1,22 @@
+[Unit]
+Description=Immich Database
+
+[Container]
+ContainerName=database
+Image=ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0
+Pod=immich.pod
+AutoUpdate=registry
+Environment=TZ=America/Chicago
+Environment=POSTGRES_PASSWORD=changeme
+Environment=POSTGRES_USER=postgres
+Environment=POSTGRES_DB=immich
+Environment=POSTGRES_INITDB_ARGS=--data-checksums
+Volume=/srv/immich/postgres:/var/lib/postgresql/data
+Exec=postgres -c shared_preload_libraries=vectors.so -c logging_collector=on -c max_wal_size=2GB -c shared_buffers=512MB -c wal_compression=on
+HealthCmd=pg_isready --dbname=immich --username=postgres || exit 1
+HealthInterval=5m
+Memory=1G
+
+[Service]
+Restart=unless-stopped
+TimeoutStartSec=360
