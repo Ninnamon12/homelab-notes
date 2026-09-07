@@ -14,7 +14,9 @@ These are not generic tutorials. They are what I actually ran, what broke, and w
 
 ```text
 articles/   published and draft write-ups
-configs/    Quadlets and sanitized config, when they exist
+configs/    sanitized Quadlets (wolf is rootful; most of the lab is not)
 ```
+
+Wolf unit: [`configs/wolf/wolf.container`](configs/wolf/wolf.container)
 
 Hobby project. Updates happen when something breaks or gets rebuilt.
