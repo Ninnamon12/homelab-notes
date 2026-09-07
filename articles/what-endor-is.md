@@ -4,7 +4,7 @@
 **Lab:** ENDOR  
 **Date:** 2026-09-07  
 **Scope:** inventory of one machine as observed that day  
-**Not:** a generic "my homelab 2026" flex, and not a complete parts list
+**Not:** a generic homelab flex, and not a complete parts list
 
 Other notes in this repo assume a box named ENDOR. This is that box: what I will stand behind, what I will not invent, and what was actually running when I looked.
 
@@ -28,4 +28,70 @@ Current rack PSU label is unread. A power-pull test is still unpublished.
 
 **Not claimed:** measured WAN throughput, a pull-the-plug test, or any GPU benchmark. Swap is off on purpose.
 
-See the working copy in this conversation for the full hardware table, disk inventory, running stack, and unfinished list. This file was trimmed only if the GitHub API rejected the long draft; prefer the complete local `articles/what-endor-is.md`.
+## Hardware I will name
+
+| Piece | What I know | Why it matters |
+| --- | --- | --- |
+| Board | ASUS PRIME B550-PLUS AC-HES, firmware 3621 (2025-01-13) | AM4 desktop board, not a 1U chassis |
+| CPU | Ryzen 7 5800XT, 8c/16t | Enough host CPU that Wolf encode is a choice |
+| RAM | 30 GiB visible, 0 swap | Swap is disabled so Ubuntu does not wear the NVMe |
+| GPU | Tesla P100 16 GB, nvidia0 / renderD128, module 580.173.02 | Printed shroud + Wathai 9733, PWM from p100-fan-control.service |
+| Case | 12U glass-door rack; board on an open tray at the top | Photos under articles/images/ |
+| GPU consumers | Wolf (rootful), Immich server + ML via CDI, Ollama | Two NVIDIA integration stories |
+| OS / runtime | Ubuntu 26.04.1 LTS, kernel 7.0.0-31-generic, Podman 5.7.0 | Immich ML healthcheck quoting broke on this pairing |
+| Storage | Btrfs on bcache writethrough; NVMe root; separate media + Time Machine disks | Not ZFS. Not one big pool |
+| Network | UDM-Pro (1 TB HDD) + USW-16-PoE; WAN on SFP via Ethernet-to-SFP; AdGuard Home | SFP is the circuit, not a 10 Gb flex |
+| Power | CyberPower S175UC on NUT, plus WOL | No published pull-the-plug test |
+| Console | Cockpit, including cockpit-podman | Same engine the Quadlets use |
+
+Why this card exists: [Why I bought a sub-$100 Tesla P100](why-i-bought-a-tesla-p100.md).
+
+## Runtime model
+
+House style: Ubuntu 26.04.1 LTS, Podman 5.7.0, Quadlets, rootless user units for almost everything.
+
+| Workload | Privilege | Live unit location |
+| --- | --- | --- |
+| Wolf | rootful system Quadlet | /etc/containers/systemd/wolf.container |
+| AdGuard Home | rootful | system container |
+| Everything else below | rootless | ~/.config/containers/systemd/ |
+
+## What was running on 2026-09-07
+
+### Rootful
+
+| Name | Role |
+| --- | --- |
+| Wolf | Moonlight supervisor. Sanitized unit: [configs/wolf/](../configs/wolf/) |
+| AdGuard Home | LAN DNS. Technitium is planned, not running |
+
+### Rootless
+
+Uptime Kuma; Scrypted (+ Watchtower); LubeLogger + Postgres; AirTrail DB only; Jellyfin (daily client is Infuse); Ollama; Jellyseerr; Home Assistant; Immich pod ([configs/immich/](../configs/immich/)).
+
+Immich ML is healthy as of later 2026-09-07 after a HealthCmd quoting fix on Podman 5.7.0 / Ubuntu 26.04.1. That is liveness, not an embeddings benchmark.
+
+## Disks
+
+| Device | Size | Model | Role |
+| --- | --- | --- | --- |
+| nvme0n1 | 931.5 G | CT1000P3SSD8 | EFI + /boot + LVM root ext4 |
+| sda | 465.8 G | WDC WDS500G1R0A | bcache cache |
+| sdb | 3.6 T | ST4000NE001-2MA1 | bcache0 Btrfs (unmounted in dump) |
+| sdc | 3.6 T | ST4000NE001-2MA1 | bcache1 Btrfs at /mnt/network |
+| sdd | 14.6 T | ST16000NM001G-2K | ext4 /mnt/media |
+| sde | 3.6 T | ST4000VN006-3CW1 | Time Machine splits |
+
+Cache mode is writethrough.
+
+## Unfinished
+
+- AirTrail app missing from podman ps
+- Immich memories unit on disk, stopped
+- Wolf remains rootful
+- NVIDIA driver updates still mean rebuild gow/nvidia-driver + nvidia-driver-vol + CDI
+- No published power-fail test
+- Current rack PSU model unread
+- UniFi APs unnamed
+
+LAN address, paths under /mnt/network, GPU UUID, Wolf config.toml, DB passwords, and hostnamectl Machine/Boot ID stay off this repo.
