@@ -4,6 +4,8 @@ Supports [Why I bought a sub-$100 Tesla P100](../../articles/why-i-bought-a-tesl
 
 The Tesla is passive. Air comes from a 3D-printed shroud and a Wathai 9733 PWM blower on a motherboard header. This unit maps `nvidia-smi` GPU temp onto that header.
 
+A GTX 960 shares the top tray and is for occasional local DisplayPort output only. Fan control here is `GPU_ID=0` (the P100). Do not point this script at the 960.
+
 **Live paths**
 
 - `/usr/local/bin/p100-fan-control.sh`

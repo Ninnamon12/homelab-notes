@@ -7,10 +7,10 @@
 **Not:** a generic homelab flex, and not a complete parts list
 
 <p align="center">
-  <img src="images/endor-rack.jpg" alt="ENDOR rack with the glass door open: Ryzen host and Tesla P100 on top, UniFi Dream Machine Pro and 16-port PoE switch in the middle, spare disks on the shelf below" width="720">
+  <img src="images/endor-rack.jpg" alt="ENDOR rack with the glass door open: Ryzen host, Tesla P100 and GTX 960 on the top tray, UniFi Dream Machine Pro and 16-port PoE switch in the middle, spare disks on the shelf below" width="720">
 </p>
 
-<p align="center"><em>Floor rack, door parked to the side. The blower Tesla at the top right is the P100 — no display cable because the card has no display ports.</em></p>
+<p align="center"><em>Floor rack, door parked to the side. Blower Tesla on the tray is the P100 (no display ports). The card to its right with the DisplayPort cable is a GTX 960 for occasional local outputs.</em></p>
 
 Other notes in this repo assume a box named ENDOR. This is that box: what I will stand behind, what I will not invent, and what was actually running when I looked.
 
@@ -21,7 +21,7 @@ A Wolf Quadlet or an Immich pod is unreadable if you do not know the machine aro
 What I do have:
 
 - A named lab, board, CPU, RAM, and OS point release
-- One GPU that forces a lot of the architecture
+- One encode/compute GPU that forces a lot of the architecture, plus a GTX 960 for local video out
 - Disk models plus the Btrfs RAID1 + bcache topology
 - A runtime policy with one loud exception
 - A `podman ps` from 2026-09-07
@@ -30,7 +30,7 @@ The photo is the case: a 12U glass-door floor rack, board on an open tray at the
 
 ## The claim
 
-**Observed:** ENDOR is hostname `endor`, chassis `desktop`, an ASUS PRIME B550-PLUS AC-HES running Ubuntu 26.04.1 LTS (`Linux 7.0.0-31-generic`). CPU is an AMD Ryzen 7 5800XT (8 cores / 16 threads). About 30 GiB RAM visible, no swap. Podman 5.7.0. NVIDIA host module `580.173.02`. Most workloads are rootless Podman Quadlets. Wolf and AdGuard Home are rootful. The interesting GPU is a reused Tesla P100 16 GB (`nvidia0`, `/dev/dri/renderD128`). Bulk app/photo state sits on Btrfs over bcache (writethrough) at `/mnt/network`. Media is a separate 16 TB disk. In front of the host: a UniFi Dream Machine Pro (1 TB HDD) and a USW-16-PoE. UDM-Pro WAN is an Ethernet-to-SFP transceiver because the Spectrum handoff is sold as 1 Gbps and the circuit regularly runs faster than that; the SFP port is how that link lands. DNS on the box is AdGuard Home. Power path is a CyberPower S175UC on NUT, plus wake-on-LAN. Everyday management is Cockpit plus `journalctl`.
+**Observed:** ENDOR is hostname `endor`, chassis `desktop`, an ASUS PRIME B550-PLUS AC-HES running Ubuntu 26.04.1 LTS (`Linux 7.0.0-31-generic`). CPU is an AMD Ryzen 7 5800XT (8 cores / 16 threads). About 30 GiB RAM visible, no swap. Podman 5.7.0. NVIDIA host module `580.173.02`. Most workloads are rootless Podman Quadlets. Wolf and AdGuard Home are rootful. The interesting GPU is a reused Tesla P100 16 GB (`nvidia0`, `/dev/dri/renderD128`). A GTX 960 sits next to it on the same tray and takes a DisplayPort cable when I need a local picture; Wolf/Immich/Jellyfin are not documented as using that card. Bulk app/photo state sits on Btrfs over bcache (writethrough) at `/mnt/network`. Media is a separate 16 TB disk. In front of the host: a UniFi Dream Machine Pro (1 TB HDD) and a USW-16-PoE. UDM-Pro WAN is an Ethernet-to-SFP transceiver because the Spectrum handoff is sold as 1 Gbps and the circuit regularly runs faster than that; the SFP port is how that link lands. DNS on the box is AdGuard Home. Power path is a CyberPower S175UC on NUT, plus wake-on-LAN. Everyday management is Cockpit plus `journalctl`.
 
 **Not claimed:** measured WAN throughput, a pull-the-plug test, or any GPU benchmark. Swap is off on purpose.
 
@@ -41,9 +41,10 @@ The photo is the case: a 12U glass-door floor rack, board on an open tray at the
 | Board | ASUS PRIME B550-PLUS AC-HES, firmware 3621 (2025-01-13) | AM4 desktop board, not a 1U chassis |
 | CPU | Ryzen 7 5800XT, 8c/16t | Enough host CPU that Wolf encode is a choice |
 | RAM | 30 GiB visible, 0 swap | Swap is disabled so Ubuntu does not wear the NVMe |
-| GPU | Tesla P100 16 GB, nvidia0 / renderD128, module 580.173.02 | Printed shroud + Wathai 9733, PWM from p100-fan-control.service |
+| GPU (encode / compute) | Tesla P100 16 GB, nvidia0 / renderD128, module 580.173.02 | Printed shroud + Wathai 9733, PWM from p100-fan-control.service |
+| GPU (local display) | GTX 960, DisplayPort cable visible on the right of the tray | Occasional graphical output. Not the Wolf/Immich card in these notes |
 | Case | 12U glass-door rack; board on an open tray at the top | Photo above; same file at [images/endor-rack.jpg](images/endor-rack.jpg) |
-| GPU consumers | Wolf (rootful), Immich server + ML via CDI, Ollama | Two NVIDIA integration stories |
+| GPU consumers | Wolf (rootful), Immich server + ML via CDI, Ollama | Those workloads are wired to the P100 |
 | OS / runtime | Ubuntu 26.04.1 LTS, kernel 7.0.0-31-generic, Podman 5.7.0 | Immich ML healthcheck quoting broke on this pairing |
 | Storage | Btrfs on bcache writethrough; NVMe root; separate media + Time Machine disks | Not ZFS. Not one big pool |
 | Network | UDM-Pro (1 TB HDD) + USW-16-PoE; WAN on SFP via Ethernet-to-SFP; AdGuard Home | SFP is the circuit, not a 10 Gb flex |
