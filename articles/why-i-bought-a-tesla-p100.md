@@ -10,7 +10,7 @@ The point of this note is not that a P100 is a good 2026 gaming GPU. It is that 
 
 I bought it because it was the cheapest enterprise-grade GPU I could find that still had encoding cores, and it was under $100.
 
-Order date 2025-12-27. Delivered 2026-01-02. Listing: NVIDIA Tesla P100 16 GB HBM2, part `699-2H400-0201`. **$89.97** for the board, **$93.77** out the door
+Order date 2025-12-27. Delivered 2026-01-02. Listing: NVIDIA Tesla P100 16 GB HBM2, part `699-2H400-0201`. **$89.97** for the board, **$93.77** out the door. Name, address, order ID, and tracking stay off this repo.
 
 Those cores exist for Wolf / Moonlight. Immich and Jellyfin can still see the same die. I do not watch the library in Jellyfin's own app. I use Infuse. That is why a Pascal encode block is enough for media here.
 
@@ -45,7 +45,7 @@ What I wanted, in order:
 
 What I accepted:
 
-- No monitor ports. Wolf is headless (`WLR_BACKEND=headless`, `WOLF_RENDER_NODE=/dev/dri/renderD128`).
+- No monitor ports on the Tesla. Wolf is headless (`WLR_BACKEND=headless`, `WOLF_RENDER_NODE=/dev/dri/renderD128`). A GTX 960 on the same tray takes a DisplayPort cable when I want a local picture. That card is not the encode device.
 - 250 W-class card. Not a 75 W impulse buy. A passive Tesla does not invent airflow. See cooling below.
 - Datacenter driver story. CDI for the rootless stack. `nvidia-driver-vol` for Wolf.
 - Pascal NVENC. Fine for "a stream exists." Not the card you buy to win an encode-quality thread.
@@ -174,7 +174,9 @@ What is on the card:
 - Wathai 97x33 mm 9733 blower, 12 V, 4-pin PWM, dual ball bearing, centrifugal
 - PWM on a real motherboard header, not molex-at-full-speed
 
-The close-up is the **old tower**. Same shroud idea, different box. That photo also shows an ASUS Strix under the P100 and a Corsair RM-series PSU. The Strix is not in the current GPU inventory. The rack shot is current: open tray at the top, UDM-Pro and USW-16-PoE in the middle, disks lower.
+The close-up is the **old tower**. Same shroud idea, different box. That photo also shows an ASUS Strix under the P100 and a Corsair RM-series PSU.
+
+The rack shot is current: open tray at the top, UDM-Pro and USW-16-PoE in the middle, disks lower. On that tray the P100 is the blower Tesla. The card to its right with the DisplayPort cable is a **GTX 960**, used sometimes for local graphical output. It is not the Wolf / Immich / Jellyfin device in these notes. Wolf stays headless on the P100 because the Tesla still has no monitor ports.
 
 ![P100 with printed shroud and Wathai blower in the old tower](images/p100-shroud-old-case.jpg)
 
@@ -205,7 +207,7 @@ Worth keeping:
 | Hardware NVENC + NVDEC | Wolf has an encoder. Jellyfin has an off-ramp when Infuse cannot direct-play. |
 | Tesla session policy | I am not patching a consumer NVENC limit for one game stream and a stray transcode. |
 | HBM2 + a real CUDA device | Ollama and Immich ML are not bolted onto a 2 GB GT 1030. |
-| No display outputs | Forces the honest Wolf setup instead of an HDMI dummy plug. |
+| No display outputs on the Tesla | Forces the honest Wolf setup. Local picture is the GTX 960. |
 
 The bill I keep paying:
 
@@ -223,7 +225,7 @@ Buy a P100 if:
 
 - You actually have a game-streaming host in mind (Wolf or Sunshine), not just a media folder.
 - The used price in front of you is in the "why not" range.
-- You will tolerate no outputs, a datacenter driver, and a card that is old in every encode-quality chart.
+- You will tolerate no outputs on the Tesla, a datacenter driver, and a card that is old in every encode-quality chart.
 - Your media clients direct-play most of the library. Transcode is the exception.
 
 Do not buy a P100 if:
