@@ -1,6 +1,6 @@
 # Why I run Wolf on Podman instead of Docker (even though the permissions are worse)
 
-**Status:** draft  
+**Status:** published  
 **Lab:** ENDOR  
 **Date:** 2026-09-07  
 **Scope:** one homelab, one workload — not a generic runtime shoot-out  
@@ -13,9 +13,9 @@ This is why ENDOR runs [Wolf](https://github.com/games-on-whales/wolf) — Moonl
 
 ## What ENDOR is, and why Wolf is the test that mattered
 
-ENDOR is an Ubuntu Server homelab. Most of the stack is rootless Podman and user Quadlets. Wolf is not.
+ENDOR is an Ubuntu Server homelab. Most of the stack is rootless Podman and user Quadlets. Wolf is not. The lab snapshot is in [What ENDOR is](what-endor-is.md).
 
-The interesting hardware is a reused Tesla P100 (`nvidia0`, `/dev/dri/renderD128`). The interesting workload is Wolf: one host container that stands up per-client virtual desktops and streams them to Moonlight. On this box the first app that matters is Steam, started by Wolf as another container (`type = "docker"` in Wolf's config) from `ghcr.io/games-on-whales/steam:master`.
+The interesting hardware is a reused Tesla P100 (`nvidia0`, `/dev/dri/renderD128`). Why that card exists is a separate note: [Why I bought a sub-$100 Tesla P100](why-i-bought-a-tesla-p100.md). The interesting workload is Wolf: one host container that stands up per-client virtual desktops and streams them to Moonlight. On this box the first app that matters is Steam, started by Wolf as another container (`type = "docker"` in Wolf's config) from `ghcr.io/games-on-whales/steam:master`.
 
 Wolf is a bad candidate for a generic container-engine comparison, which is exactly why it is a good one for this lab.
 
@@ -33,13 +33,19 @@ So the runtime choice is an architecture decision, not a CLI preference.
 
 ## The claim
 
-**Observed:** for this Wolf/GPU workload, Podman felt lower-level and more responsive than Docker. I also prefer how the rest of the lab shows up in Cockpit.
+I run Wolf on Podman because the rest of ENDOR is already Podman, Quadlets, systemd, and Cockpit. Wolf does not need Docker-the-product. It needs a Docker-compatible API next to a lot of host devices. Putting that API on a second engine would split the lab for a README example.
 
-**Not claimed:** I do not have a side-by-side benchmark. No launch-time numbers, no input-lag captures, no dropped-frame logs, no `podman stats` vs `docker stats` dump from the same session. If I publish those later, they will be labeled as measurements. Until then, "more responsive" is an impression from using the box, not a result.
+**Observed on this box:**
 
-**Inferred (not measured):** some of that impression is how close Podman sits to the pieces Wolf already forces me to touch — systemd, device nodes, the runtime socket, Quadlets.
+- Wolf is a system Quadlet (`wolf.service`), not a user Quadlet and not a compose stack.
+- Restart is `systemctl restart wolf`. Crash leftovers are an `ExecStartPre` problem. Liveness is a health check on TCP 47989.
+- After an NVIDIA host-driver bump, the named volume `nvidia-driver-vol` goes stale until I rebuild it against `/sys/module/nvidia/version`.
 
-## Where "lower-level" actually shows up
+**Not claimed:** Podman encodes frames faster, reduces Moonlight input lag, or makes the P100 "snappier" than Docker. I do not have a side-by-side on this host. Stream feel is dominated by the card, the network, and `WOLF_USE_ZERO_COPY=FALSE`, not by which process created the session container. I am not installing Docker on ENDOR to manufacture that number.
+
+**Inferred:** "lower-level" is how close the failure domain sits to systemd, udev, and device nodes — which is where Wolf actually breaks.
+
+## Where that shows up
 
 Docker's model is a daemon. You talk to `dockerd`. `dockerd` talks to the rest of the machine.
 
@@ -56,8 +62,6 @@ The failure domain on ENDOR is:
 5. Did the last crash leave a helper container that will collide on the next start?
 
 Those are host questions. Podman does not hide them. Docker does not make the hardware easier either — it just adds `dockerd` as another place the same failure can hide.
-
-"Lower-level" here means: when Wolf breaks, I am already looking at systemd, udev, and device permissions, which is where the bug usually is.
 
 ### Wolf is a system Quadlet, not a rootless one
 
@@ -80,11 +84,9 @@ Two details that are easy to copy wrong:
 - Official Wolf examples often mount the socket `:ro`. Mine is `:rw`. Wolf has to create containers. A read-only socket is a polite way to get a supervisor that cannot supervise.
 - The socket has to be the *system* socket. A user-namespace socket cannot see the devices this unit passes through.
 
-Wolf does not need Docker-the-product. It needs a Docker-compatible API next to a lot of host devices.
-
 ### The P100 is not a GeForce
 
-This card has no monitor ports. The unit does not pretend otherwise:
+This card has no monitor ports. The buying reason and the encode-block caveat are in [the P100 note](why-i-bought-a-tesla-p100.md). The unit does not pretend otherwise:
 
 ```ini
 Environment=WLR_BACKEND=headless
@@ -96,46 +98,43 @@ Environment=WOLF_USE_ZERO_COPY=FALSE
 
 NVIDIA libraries come from a named volume, `nvidia-driver-vol`, mounted at `/usr/nvidia`, with `LD_LIBRARY_PATH` pointed at that volume first. That exists because the container image and the host driver like to step on each other. I have already hit that class of failure; the comment in the unit still says "Phase 2 Shadowing."
 
-Zero-copy is off on purpose. I am not going to smuggle a P100 encode deep-dive into this article. The point for a runtime comparison is narrower: the GPU path is a pile of device nodes, a driver volume, and environment variables. Podman did not abstract any of that away. I did not want it to.
+Zero-copy is off on purpose. It made the stream *work* on this card. It is not a latency flex.
 
 A health check hits Moonlight's control port (`47989`). If Wolf is up as a container but dead as a streamer, systemd kills it. That is Quadlet/`Notify=healthy` doing work I would otherwise put in a wrapper script.
 
-## Responsiveness, without pretending I timed it
+### The official driver-volume path goes stale on every host driver bump
 
-What I can say honestly:
+Wolf's NVIDIA manual path is: build `gow/nvidia-driver` against the host driver version, pour those files into `nvidia-driver-vol`, mount the volume at `/usr/nvidia`. That works until the next `apt upgrade` of the NVIDIA driver. Then the volume still contains *yesterday's* userspace, the host kernel module is *today's*, and Wolf fails in ways that look like GPU passthrough, encoding, or "shadowing" depending on which library loaded first.
 
-- Starting and restarting Wolf is `systemctl restart wolf`. There is no separate "is the daemon up?" step in the happy path.
-- Leftover session containers are a known failure mode. The unit deletes them before start. That is operational responsiveness, not frame-time.
-- Debugging "why is this session container not starting?" is a `systemctl` / `journalctl -u wolf` / `podman ps -a` problem. That loop is tight. I will take a tight loop over a friendlier first-run experience.
+The Wolf quickstart is not wrong about the first install. It is incomplete as an operations note. On ENDOR the host driver version is the source of truth (`/sys/module/nvidia/version`). After a driver update I rebuild the image from that version, repopulate the same named volume, and regenerate the CDI spec the rest of the lab uses. Commands live next to the unit: [`configs/wolf/README.md`](../configs/wolf/README.md).
 
-What I will not say:
+This is not a Podman-vs-Docker difference. Docker hits the same volume/driver skew. Podman made it visible because the Quadlet names the volume and the `LD_LIBRARY_PATH` instead of hiding it behind `--gpus=all`.
 
-- Podman encodes frames faster.
-- Podman reduces Moonlight input lag.
-- The P100 is "faster on Podman."
-- `WOLF_USE_ZERO_COPY=FALSE` made the stream snappier. It made the stream *work* on this card.
+## What "responsive" meant, without a stopwatch
 
-If I later capture even rough numbers — time from `systemctl start wolf` to port 47989 answering, time from Moonlight handshake to first frame, journal timestamps around session-container create — I will add them here and mark the date.
+Not frame time. The loop I actually use:
 
-## Second win: Cockpit
+- Start and restart are `systemctl restart wolf`. There is no separate "is the daemon up?" step in the happy path.
+- Leftover session containers are a known failure mode. The unit deletes them before start.
+- Debugging "why is this session container not starting?" is `systemctl` / `journalctl -u wolf` / `podman ps -a`.
+
+If I later time `systemctl start wolf` until port 47989 answers, that number belongs here and will be dated. It still would not be a Docker comparison.
+
+## Cockpit
 
 I manage the box through Cockpit. The container UI I actually want is [cockpit-podman](https://github.com/cockpit-project/cockpit-podman), which talks to Podman's API.
 
-That is the concrete advantage, not "the page is prettier."
-
 - The same engine that runs the Wolf Quadlet is the engine the browser can list.
-- Wolf, Wolf UI, and the Steam session container show up as siblings. They *are* siblings. Hiding that behind Docker-only muscle memory would be a lie about how the box is shaped.
+- Wolf, Wolf UI, and the Steam session container show up as siblings. They *are* siblings.
 - When a session looks wedged, I can see it next to the rest of the lab without SSH-first.
 
-Cockpit is not a substitute for `journalctl -u wolf` when GPU passthrough is on fire. It is the everyday control plane. Podman fitting that control plane is worth something on a machine I do not want to babysit from a terminal every time I want to know what is running.
+Cockpit is not a substitute for `journalctl -u wolf` when GPU passthrough is on fire. It is the everyday control plane.
 
 ## The honest cost: permissions are worse
 
 Docker's default is simple because it is privileged-by-habit. Rootful Docker plus the NVIDIA Container Toolkit path is a well-lit trail. Wolf's own quickstart is Docker-first for a reason.
 
 Podman makes the permission model visible. Visible is not the same as easy.
-
-On this workload the tax is not theoretical.
 
 **1. Devices are first-class problems.**  
 The unit adds `/dev/dri`, `/dev/uinput`, `/dev/uhid`, and the P100 NVIDIA nodes one by one, then also bind-mounts `/dev` and `/run/udev` read-write so controllers can appear after start. Device cgroup rule `c 13:* rmw` is in `PodmanArgs`. Wolf's Steam app repeats the pattern and adds `c 244:* rmw`, plus `/dev/input` as a volume. None of that is a Podman-vs-Docker feature. All of it is easy to get half-right.
@@ -167,27 +166,31 @@ That is the trade I accepted:
 | One engine for the lab | Device and socket permissions you cannot ignore |
 | Wolf as `wolf.service` | This unit is system/rootful; the rest of the lab is not |
 | Cockpit talking to the same API | No "it just works" NVIDIA one-liner |
-| systemd health + crash cleanup | More time spent on UIDs, groups, udev, and leftover names |
+| systemd health + crash cleanup | More time spent on UIDs, groups, udev, leftover names, and driver-volume rebuilds |
 
 For ENDOR — a Tesla P100, Wolf, Steam-as-a-child-container, and Cockpit on a Podman box — that trade is worth it. For a single Docker compose stack on a NAS, it probably is not.
 
 ## What this article is not
 
 - A Quadlet you should paste blindly. Start at the [Wolf quickstart (Podman Quadlets)](https://games-on-whales.github.io/wolf/stable/user/quickstart.html), then look at the [sanitized unit from ENDOR](../configs/wolf/wolf.container) for the deviations (socket `:rw`, Tesla headless env, driver volume, health check, leftover-container cleanup).
-- A P100 encode guide. That is a later note.
+- A P100 encode guide. That is [the P100 note](why-i-bought-a-tesla-p100.md).
+- A Docker vs Podman benchmark. I did not install a second engine to produce one.
 - A security audit of mounting `/dev` into a supervisor container. That surface is large on Docker and Podman.
 - My live `config.toml`. That file has client certificates in it. It stays off this repo.
 
 ## Related
 
+- [What ENDOR is](what-endor-is.md)
+- [Why I bought a sub-$100 Tesla P100](why-i-bought-a-tesla-p100.md)
 - [Wolf / Games on Whales](https://github.com/games-on-whales/wolf)
 - [Wolf quickstart](https://games-on-whales.github.io/wolf/stable/user/quickstart.html)
 - [cockpit-podman](https://github.com/cockpit-project/cockpit-podman)
 - [Podman docs](https://docs.podman.io/)
 - [ENDOR Wolf Quadlet (sanitized)](../configs/wolf/wolf.container)
+- [After an NVIDIA driver update](../configs/wolf/README.md)
 
 ## Later, if the lab produces the evidence
 
-- Actual start-time / first-frame notes from `journalctl`
-- The permission failures in order, including the ones that did not work
+- Time from `systemctl start wolf` to port 47989 answering
+- A dedicated postmortem of one driver-update failure (logs, not just the rebuild commands)
 - Whether I ever bother making Wolf rootless, or stop calling the whole lab that
