@@ -10,7 +10,7 @@ The point of this note is not that a P100 is a good 2026 gaming GPU. It is that 
 
 I bought it because it was the cheapest enterprise-grade GPU I could find that still had encoding cores, and it was under $100.
 
-Order date 2025-12-27. Delivered 2026-01-02. Listing: NVIDIA Tesla P100 16 GB HBM2, part `699-2H400-0201`. **$89.97** for the board, **$93.77** out the door. Name, address, order ID, and tracking stay off this repo.
+Order date 2025-12-27. Delivered 2026-01-02. Listing: NVIDIA Tesla P100 16 GB HBM2, part `699-2H400-0201`. **$89.97** for the board, **$93.77** out the door
 
 Those cores exist for Wolf / Moonlight. Immich and Jellyfin can still see the same die. I do not watch the library in Jellyfin's own app. I use Infuse. That is why a Pascal encode block is enough for media here.
 
