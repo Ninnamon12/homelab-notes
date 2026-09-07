@@ -1,0 +1,12 @@
+[Unit]
+Description=P100 GPU Fan Control
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/p100-fan-control.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
