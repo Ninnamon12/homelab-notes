@@ -86,7 +86,7 @@ Two details that are easy to copy wrong:
 
 ### The P100 is not a GeForce
 
-This card has no monitor ports. The buying reason and the encode-block caveat are in [the P100 note](why-i-bought-a-tesla-p100.md). The unit does not pretend otherwise:
+This card has no monitor ports. Local picture on the box, when I need one, comes from a GTX 960 on the same tray (DisplayPort cable in the [rack photo](what-endor-is.md)). That GeForce is not the Wolf encode device. The buying reason and the encode-block caveat are in [the P100 note](why-i-bought-a-tesla-p100.md). The Wolf unit does not pretend the Tesla has an HDMI jack:
 
 ```ini
 Environment=WLR_BACKEND=headless
