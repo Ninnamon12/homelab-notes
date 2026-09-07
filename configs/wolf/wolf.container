@@ -1,0 +1,72 @@
+# ENDOR / Wolf — sanitized system Quadlet
+# Live file: /etc/containers/systemd/wolf.container
+# Replace ${WOLF_CONFIG} with the host directory you want mounted at /etc/wolf.
+
+[Unit]
+Description=Wolf / Games On Whales
+Requires=network-online.target podman.socket
+After=network-online.target podman.socket
+
+[Service]
+TimeoutStartSec=900
+# Previous crashes leave helper containers that collide on the next start
+ExecStartPre=-/bin/sh -c "/usr/bin/podman rm -f WolfPulseAudio 2>/dev/null; /usr/bin/podman ps -aq --filter name=Wolf-UI_ | xargs -r /usr/bin/podman rm -f"
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=5
+
+[Container]
+AutoUpdate=registry
+ContainerName=%p
+HostName=%p
+Image=ghcr.io/games-on-whales/wolf:stable
+Network=host
+SecurityLabelDisable=true
+# c 13:* = input (uinput); ipc=host is required for Xwayland/GPU memory sharing
+PodmanArgs=--ipc=host --device-cgroup-rule "c 13:* rmw"
+
+AddDevice=/dev/dri
+AddDevice=/dev/uinput
+AddDevice=/dev/uhid
+
+Volume=/dev/:/dev/:rw
+Volume=/run/udev:/run/udev:rw
+Volume=${WOLF_CONFIG}:/etc/wolf:z
+# Writable on purpose: Wolf creates session containers through this API
+Volume=/run/podman/podman.sock:/var/run/docker.sock:rw
+Volume=nvidia-driver-vol:/usr/nvidia
+
+Environment=NVIDIA_DRIVER_VOLUME_NAME=nvidia-driver-vol
+Environment=__GLX_VENDOR_LIBRARY_NAME=nvidia
+Environment=LD_LIBRARY_PATH=/usr/nvidia/lib:/usr/nvidia/lib32:${LD_LIBRARY_PATH}
+
+# P100 on this host: nvidia0 + renderD128
+AddDevice=/dev/nvidia0
+AddDevice=/dev/nvidiactl
+AddDevice=/dev/nvidia-uvm
+AddDevice=/dev/nvidia-uvm-tools
+AddDevice=/dev/nvidia-modeset
+AddDevice=/dev/nvidia-caps/nvidia-cap1
+AddDevice=/dev/nvidia-caps/nvidia-cap2
+
+Environment=NVIDIA_VISIBLE_DEVICES=0
+Environment=WOLF_RENDER_NODE=/dev/dri/renderD128
+
+# Tesla has no monitor ports
+Environment=WLR_BACKEND=headless
+Environment=WLR_RENDERER=gles2
+Environment=WLR_NO_HARDWARE_CURSORS=1
+Environment=WOLF_STOP_CONTAINER_ON_EXIT=TRUE
+Environment=WOLF_USE_ZERO_COPY=FALSE
+Environment=WOLF_LOG_LEVEL=DEBUG
+
+HealthCmd=/bin/sh -c 'timeout 5s bash -c "</dev/tcp/127.0.0.1/47989" 2>/dev/null || exit 1'
+HealthInterval=30s
+HealthTimeout=10s
+HealthStartPeriod=120s
+HealthRetries=3
+HealthOnFailure=kill
+Notify=healthy
+
+[Install]
+WantedBy=multi-user.target
