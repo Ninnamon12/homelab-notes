@@ -138,7 +138,7 @@ Proton is why I will not use this clip to sell "P100 input lag." Translation plu
 
 ![Moonlight overlay during Halo on the P100](images/moonlight-halo-ce-1080p60.jpg)
 
-One title, 1080p60, 30 Mbps asked, HEVC negotiated, 47 C at 48 W, Proton in the middle. Frame queue delay moving during the clip is noted, not blamed on the encoder. The card did the job I bought it for. A longer soak and a second title are still missing. "It is fast" is still the wrong sentence. "It works" is the sentence.
+Halo MCC: Halo 3 The Covenant: 1080p60, 30 Mbps asked, HEVC negotiated, 47 C at 48 W, Proton in the middle. Frame queue delay moving during the clip is noted, not blamed on the encoder. The card did the job I bought it for. A longer soak and a second title are still missing. "It is fast" is still the wrong sentence. "It works" is the sentence.
 
 ### Jellyfin is secondary and Infuse-shaped
 
