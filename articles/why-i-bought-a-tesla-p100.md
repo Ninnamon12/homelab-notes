@@ -60,15 +60,15 @@ Three consumers. One die. Different APIs.
 ```text
                     Tesla P100
                     nvidia0 / renderD128
-                           |
-          +----------------+----------------+
-          |                |                |
+                           │
+          ┌───────────────┼───────────────┐
+          │                │                │
         Wolf            Jellyfin          Immich
      (NVENC via         (NVENC/NVDEC      (CUDA ML +
       GStreamer /        when a client     optional video
       nvcodec)           cannot             on the same
                          direct-play)       CDI device)
-          |                |                |
+          │                │                │
      Moonlight          Infuse is          photos /
      clients            the daily           embeddings
                         player
@@ -76,7 +76,7 @@ Three consumers. One die. Different APIs.
 
 ### Gaming is why the card exists
 
-Wolf is a rootful system Quadlet. It starts session containers -- Steam is the one that matters -- and encodes a virtual desktop to Moonlight.
+Wolf is a rootful system Quadlet. It starts session containers — Steam is the one that matters — and encodes a virtual desktop to Moonlight.
 
 That encode is the purchase. Sunshine or Wolf without a hardware encoder is a different machine. I did not buy 16 GB of HBM2 so Steam would feel premium. I bought a used Tesla because the alternative in that price band was a weak consumer card or a compute card with the video block stripped. The driving point is simpler than that paragraph: **this card streams the game.** Proton is how MCC gets onto a Linux Steam container. It is also how some of the slop gets into the feel. I am not going to blame a $90 P100 for Proton.
 
@@ -93,15 +93,15 @@ What the overlay said across the clip:
 
 | Overlay field | What it showed |
 | --- | --- |
-| Video stream | 1920x1080, ~60 FPS, codec **HEVC** |
+| Video stream | 1920×1080, ~60 FPS, codec **HEVC** |
 | Incoming / decode / render | ~60 FPS |
 | Network drops / jitter drops | 0.00% / 0.00% |
 | Average network latency | 1 ms (variance 0 ms) |
-| Average decode time | ~2.6-3.2 ms |
+| Average decode time | ~2.6–3.2 ms |
 | Average frame queue delay | ~7 ms at the start, climbed to ~14 ms |
-| Average render time (incl. monitor V-sync) | ~2.0-2.4 ms |
+| Average render time (incl. monitor V-sync) | ~2.0–2.4 ms |
 
-Host HUD in the same frames: game sitting around 55-61 FPS, GPU memory **3.6 / 16.0 GB**, system RAM **~12 / 30.2 GB**. That is this box and this card.
+Host HUD in the same frames: game sitting around 55–61 FPS, GPU memory **3.6 / 16.0 GB**, system RAM **~12 / 30.2 GB**. That is this box and this card.
 
 Moonlight 6.1.0 on the client that took the clip:
 
@@ -125,7 +125,7 @@ Codec is Automatic. The overlay still said HEVC. I did not force HEVC in the cli
 | Field | Value |
 | --- | --- |
 | Card | Tesla P100-PCIE-16GB |
-| Temp | 47 C |
+| Temp | 47 °C |
 | Power | 48 W / 250 W |
 | GPU-Util | 35% |
 | Memory | 3563 MiB / 16384 MiB |
@@ -138,7 +138,7 @@ Proton is why I will not use this clip to sell "P100 input lag." Translation plu
 
 ![Moonlight overlay during Halo on the P100](images/moonlight-halo-ce-1080p60.jpg)
 
-Halo MCC: Halo 3 The Covenant: 1080p60, 30 Mbps asked, HEVC negotiated, 47 C at 48 W, Proton in the middle. Frame queue delay moving during the clip is noted, not blamed on the encoder. The card did the job I bought it for. A longer soak and a second title are still missing. "It is fast" is still the wrong sentence. "It works" is the sentence.
+One title, 1080p60, 30 Mbps asked, HEVC negotiated, 47 °C at 48 W, Proton in the middle. Frame queue delay moving during the clip is noted, not blamed on the encoder. The card did the job I bought it for. A longer soak and a second title are still missing. "It is fast" is still the wrong sentence. "It works" is the sentence.
 
 ### Jellyfin is secondary and Infuse-shaped
 
@@ -171,7 +171,7 @@ A used P100 is a passive heatsink that expected a 2U server to shove air through
 What is on the card:
 
 - Custom 3D-printed shroud
-- Wathai 97x33 mm 9733 blower, 12 V, 4-pin PWM, dual ball bearing, centrifugal
+- Wathai 97×33 mm 9733 blower, 12 V, 4-pin PWM, dual ball bearing, centrifugal
 - PWM on a real motherboard header, not molex-at-full-speed
 
 The close-up is the **old tower**. Same shroud idea, different box. That photo also shows an ASUS Strix under the P100 and a Corsair RM-series PSU.
@@ -186,16 +186,18 @@ The blower is not left at 12 V. A system service reads GPU temp from `nvidia-smi
 
 | GPU temp | PWM |
 | --- | --- |
-| <= 45 C | 50 (stall floor for this blower) |
-| 45-50 C | ramp 50 to 80 |
-| 50-75 C | ramp 80 to 255 |
-| >= 75 C | 255 |
+| ≤ 48 °C | 50 (stall floor for this blower) |
+| 48–65 °C | ramp 50 → 85 |
+| 65–80 °C | ramp 85 → 255 |
+| ≥ 78 °C | 255 (hard pin) |
 
-On this board the header is `hwmon1/pwm3`. That path is not portable. Three failed `nvidia-smi` reads pin the fan at 255 and exit. systemd restarts the unit. SIGINT/SIGTERM also pin 255.
+The previous curve maxed at 75 °C and was already PWM 171 at 63 °C / 220 W. That was louder than the P100's 80 °C max-operating / 82 °C slowdown margin was worth. PWM also slews by 15 per 10 s loop so a load spike does not jump the blower in one write.
+
+On this board the header is `hwmon1/pwm3`. That path is not portable. Three failed `nvidia-smi` reads pin the fan at 255 and exit. systemd restarts the unit. SIGINT/SIGTERM do not pin 255 — that was a full-blast blip on every restart.
 
 `After=network.target` is what is on the unit. The script needs the NVIDIA module, not a default route. I have not cleaned that up.
 
-One data point: 47 C at 48 W / 35% util during that MCC session. That is this load, not a 250 W torture test. The claim is closed-loop on die temp, with a loud failure mode instead of an off fan.
+One data point: 47 °C at 48 W / 35% util during that MCC session. That is this load, not a 250 W torture test. The claim is closed-loop on die temp, with a loud failure mode instead of an off fan.
 
 ## What that purchase actually bought
 
@@ -207,7 +209,7 @@ Worth keeping:
 | Hardware NVENC + NVDEC | Wolf has an encoder. Jellyfin has an off-ramp when Infuse cannot direct-play. |
 | Tesla session policy | I am not patching a consumer NVENC limit for one game stream and a stray transcode. |
 | HBM2 + a real CUDA device | Ollama and Immich ML are not bolted onto a 2 GB GT 1030. |
-| No display outputs on the Tesla | Forces the honest Wolf setup. Local picture is the GTX 960. |
+| No display outputs | Forces the honest Wolf setup instead of an HDMI dummy plug. |
 
 The bill I keep paying:
 
@@ -225,7 +227,7 @@ Buy a P100 if:
 
 - You actually have a game-streaming host in mind (Wolf or Sunshine), not just a media folder.
 - The used price in front of you is in the "why not" range.
-- You will tolerate no outputs on the Tesla, a datacenter driver, and a card that is old in every encode-quality chart.
+- You will tolerate no outputs, a datacenter driver, and a card that is old in every encode-quality chart.
 - Your media clients direct-play most of the library. Transcode is the exception.
 
 Do not buy a P100 if:
