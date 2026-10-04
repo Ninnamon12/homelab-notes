@@ -8,5 +8,6 @@ The GitHub note in `articles/` is the canonical technical write-up. An X article
 | --- | --- | --- |
 | 2026-09-07 | [Why I bought a sub-$100 Tesla P100](x-why-i-bought-a-tesla-p100.md) | [articles/why-i-bought-a-tesla-p100.md](../why-i-bought-a-tesla-p100.md) |
 | 2026-09-08 | [Wolf still answered Moonlight. The volume had yesterday's libcuda](x-i-broke-wolf-after-an-nvidia-driver-update.md) | [articles/i-broke-wolf-after-an-nvidia-driver-update.md](../i-broke-wolf-after-an-nvidia-driver-update.md) |
+| 2026-10-04 | [What ENDOR is: one box, one day, and what I won't claim about it](x-what-endor-is.md) | [articles/what-endor-is.md](../what-endor-is.md) |
 
 Do not put host paths, LAN addresses, GPU UUIDs, Wolf `config.toml`, or secrets in these drafts.
